@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XOX (BSIT-11002) - Sky Rain Game with AI & Developer Badge</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    /* Vibrant Light Sky Blue Background */
+    #sky {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(-45deg, #87ceeb, #00bfff, #70c1ff, #00d2ff);
+      background-size: 300% 300%;
+      animation: skyFlow 10s ease infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 0;
+    }
+
+    @keyframes skyFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Top Centered Header Wrapper */
+    .header-wrapper {
+      z-index: 10;
+      perspective: 1000px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Glassmorphism Title Card */
+    .title-card {
+      padding: 8px 36px;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 
+        0 10px 30px rgba(0, 119, 182, 0.35),
+        inset 0 0 15px rgba(255, 255, 255, 0.6);
+      user-select: none;
+    }
+
+    .title {
+      display: flex;
+      gap: 12px;
+      font-size: 2.8rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Kinetic Moving Letters */
+    .char {
+      display: inline-block;
+      color: #ffffff;
+      text-shadow: 
+        0 4px 10px rgba(0, 80, 180, 0.5),
+        0 0 15px rgba(255, 255, 255, 0.8);
+      animation: kineticWave 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes kineticWave {
+      0% { transform: translateY(0px) rotateX(0deg) scale(1); }
+      50% { 
+        transform: translateY(-8px) rotateX(20deg) scale(1.1);
+        color: #e0f7ff;
+        text-shadow: 0 10px 20px rgba(0, 50, 150, 0.6), 0 0 25px rgba(255, 255, 255, 1);
+      }
+      100% { transform: translateY(3px) rotateX(-10deg) scale(0.98); }
+    }
+
+    .char:nth-child(1) { animation-delay: 0.0s; }
+    .char:nth-child(2) { animation-delay: 0.2s; }
+    .char:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Subtitle (BSIT-11002) */
+    .subtitle {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 3px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      letter-spacing: 2px;
+      box-shadow: 0 4px 12px rgba(0, 70, 150, 0.2);
+      user-select: none;
+    }
+
+    /* =================================================== */
+    /* CENTER XOX GAME DESIGN */
+    /* =================================================== */
+    .game-container {
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-radius: 25px;
+      padding: 18px 24px;
+      box-shadow: 0 20px 50px rgba(0, 90, 180, 0.3);
+    }
+
+    /* Mode Selection Switcher */
+    .mode-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      background: rgba(0, 60, 120, 0.2);
+      padding: 5px;
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .mode-btn {
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: #ffffff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.active {
+      background: #ffffff;
+      color: #0055aa;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Status Text Banner */
+    .status-text {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0, 60, 140, 0.5);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* XOX Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 80px);
+      grid-template-rows: repeat(3, 80px);
+      gap: 10px;
+    }
+
+    /* Cell Styles */
+    .cell {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 900;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease-in-out;
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+
+    .cell:hover {
+      background: rgba(255, 255, 255, 0.5);
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.6);
+    }
+
+    .cell.x {
+      color: #00f0ff;
+      text-shadow: 0 0 15px #00f0ff, 0 0 30px #0088ff;
+      animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .cell.o {
+      color: #ffffff;
+      text-shadow: 0 0 15px #ffffff, 0 0 25px #00bfff;
+      animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .cell.winning {
+      background: rgba(255, 255, 255, 0.85) !important;
+      animation: winnerPulse 1s infinite alternate;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0) rotate(-45deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    @keyframes winnerPulse {
+      0% { transform: scale(1); box-shadow: 0 0 15px #ffffff; }
+      100% { transform: scale(1.08); box-shadow: 0 0 30px #00f0ff; }
+    }
+
+    /* Scoreboard & Controls */
+    .controls {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score-board {
+      display: flex;
+      gap: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 0.85rem;
+      background: rgba(0, 60, 120, 0.25);
+      padding: 6px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-reset {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #0055aa;
+      background: #ffffff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    .btn-reset:hover {
+      background: #e0f7ff;
+      transform: translateY(-2deg);
+      box-shadow: 0 6px 20px rgba(0, 191, 255, 0.4);
+    }
+
+    /* =================================================== */
+    /* DEVELOPED BY SHOU FOOTER BADGE */
+    /* =================================================== */
+    .developer-badge {
+      z-index: 10;
+      padding: 6px 20px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(255, 255, 255, 0.75);
+      border-radius: 18px;
+      box-shadow: 0 6px 20px rgba(0, 80, 160, 0.25);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 6px rgba(0, 60, 130, 0.4);
+      user-select: none;
+      animation: badgeGlow 3s ease-in-out infinite alternate;
+    }
+
+    .developer-badge span {
+      color: #00f0ff;
+      text-shadow: 0 0 10px #00f0ff;
+    }
+
+    @keyframes badgeGlow {
+      0% {
+        box-shadow: 0 4px 15px rgba(0, 80, 160, 0.2);
+        transform: translateY(0);
+      }
+      100% {
+        box-shadow: 0 8px 25px rgba(0, 240, 255, 0.4);
+        transform: translateY(-3px);
+      }
+    }
+
+    /* Rain Canvas Overlay */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sky">
+    <!-- Top Centered Header -->
+    <div class="header-wrapper">
+      <div class="title-card">
+        <h1 class="title">
+          <span class="char">X</span>
+          <span class="char">O</span>
+          <span class="char">X</span>
+        </h1>
+      </div>
+      <div class="subtitle">bsit-11002</div>
+    </div>
+
+    <!-- Center XOX Game Container -->
+    <div class="game-container">
+      <!-- Mode Selection Selector -->
+      <div class="mode-selector">
+        <button class="mode-btn active" id="btn2P" onclick="setMode('2P')">👥 2 Player</button>
+        <button class="mode-btn" id="btnAI" onclick="setMode('AI')">🤖 VS AI</button>
+      </div>
+
+      <div class="status-text" id="status">Player X's Turn</div>
+
+      <div class="grid" id="grid">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+      </div>
+
+      <div class="controls">
+        <div class="score-board">
+          <span id="labelX">X: <strong id="scoreX">0</strong></span>
+          <span>|</span>
+          <span id="labelO">O: <strong id="scoreO">0</strong></span>
+        </div>
+        <button class="btn-reset" onclick="resetGame()">Restart Game</button>
+      </div>
+    </div>
+
+    <!-- Bottom Developer Badge -->
+    <div class="developer-badge">
+      Developed by <span>SHOU</span>
+    </div>
+
+    <!-- Canvas for Rain Animation -->
+    <canvas id="rainCanvas"></canvas>
+  </div>
+
+  <script>
+    // --- 1. RAIN ANIMATION ENGINE ---
+    const canvas = document.getElementById('rainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    const raindrops = [];
+    const RAIN_COUNT = 200;
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Raindrop {
+      constructor() {
+        this.reset();
+        this.y = Math.random() * height;
+      }
+
+      reset() {
+        this.x = Math.random() * width;
+        this.y = -30;
+        this.speed = Math.random() * 14 + 10;
+        this.length = Math.random() * 22 + 12;
+        this.thickness = Math.random() * 2.2 + 1;
+        this.isWhite = Math.random() > 0.45;
+      }
+
+      update() {
+        this.y += this.speed;
+        this.x -= 0.4;
+
+        if (this.y > height) {
+          this.reset();
+        }
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.lineWidth = this.thickness;
+        ctx.lineCap = 'round';
+        
+        ctx.strokeStyle = this.isWhite
+          ? 'rgba(255, 255, 255, 0.95)'
+          : 'rgba(0, 90, 210, 0.75)';
+        
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x - 3, this.y + this.length);
+        ctx.stroke();
+      }
+    }
+
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      raindrops.push(new Raindrop());
+    }
+
+    function animateRain() {
+      ctx.clearRect(0, 0, width, height);
+      for (let drop of raindrops) {
+        drop.update();
+        drop.draw();
+      }
+      requestAnimationFrame(animateRain);
+    }
+
+    animateRain();
+
+    // --- 2. XOX GAME & AI ENGINE ---
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let currentPlayer = 'X';
+    let gameMode = '2P'; // '2P' or 'AI'
+    let isGameActive = true;
+    let scoreX = 0;
+    let scoreO = 0;
+
+    const statusText = document.getElementById('status');
+    const cells = document.querySelectorAll('.cell');
+    const scoreXElem = document.getElementById('scoreX');
+    const scoreOElem = document.getElementById('scoreO');
+    const labelO = document.getElementById('labelO');
+    const btn2P = document.getElementById('btn2P');
+    const btnAI = document.getElementById('btnAI');
+
+    const winningConditions = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    cells.forEach(cell => {
+      cell.addEventListener('click', handleCellClick);
+    });
+
+    function setMode(mode) {
+      gameMode = mode;
+      btn2P.classList.toggle('active', mode === '2P');
+      btnAI.classList.toggle('active', mode === 'AI');
+      labelO.innerHTML = mode === 'AI' ? `AI: <strong id="scoreO">${scoreO}</strong>` : `O: <strong id="scoreO">${scoreO}</strong>`;
+      resetGame();
+    }
+
+    function handleCellClick(e) {
+      const clickedCell = e.target;
+      const clickedIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+      if (board[clickedIndex] !== '' || !isGameActive) return;
+
+      makeMove(clickedIndex, currentPlayer);
+
+      if (isGameActive && gameMode === 'AI' && currentPlayer === 'O') {
+        setTimeout(makeAIMove, 300);
+      }
+    }
+
+    function makeMove(index, player) {
+      board[index] = player;
+      const cell = cells[index];
+      cell.textContent = player;
+      cell.classList.add(player.toLowerCase());
+
+      if (checkResult(player)) return;
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusText.textContent = gameMode === 'AI' && currentPlayer === 'O' 
+        ? "🤖 AI is thinking..." 
+        : `Player ${currentPlayer}'s Turn`;
+    }
+
+    function checkResult(player) {
+      let roundWon = false;
+      let winningCombo = [];
+
+      for (let condition of winningConditions) {
+        const [a, b, c] = condition;
+        if (board[a] === player && board[b] === player && board[c] === player) {
+          roundWon = true;
+          winningCombo = condition;
+          break;
+        }
+      }
+
+      if (roundWon) {
+        const winnerName = gameMode === 'AI' && player === 'O' ? 'AI' : `Player ${player}`;
+        statusText.textContent = `🎉 ${winnerName} Wins!`;
+        winningCombo.forEach(idx => cells[idx].classList.add('winning'));
+        isGameActive = false;
+
+        if (player === 'X') {
+          scoreX++;
+          scoreXElem.textContent = scoreX;
+        } else {
+          scoreO++;
+          document.getElementById('scoreO').textContent = scoreO;
+        }
+        return true;
+      }
+
+      if (!board.includes('')) {
+        statusText.textContent = `🤝 It's a Draw!`;
+        isGameActive = false;
+        return true;
+      }
+
+      return false;
+    }
+
+    // --- AI LOGIC (MINIMAX ALGORITHM) ---
+    function makeAIMove() {
+      if (!isGameActive) return;
+      
+      let bestScore = -Infinity;
+      let bestMove;
+
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === '') {
+          board[i] = 'O';
+          let score = minimax(board, 0, false);
+          board[i] = '';
+          if (score > bestScore) {
+            bestScore = score;
+            bestMove = i;
+          }
+        }
+      }
+
+      if (bestMove !== undefined) {
+        makeMove(bestMove, 'O');
+      }
+    }
+
+    const scores = { O: 10, X: -10, tie: 0 };
+
+    function minimax(currBoard, depth, isMaximizing) {
+      let winner = checkWinnerForMinimax();
+      if (winner !== null) return scores[winner];
+
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (currBoard[i] === '') {
+            currBoard[i] = 'O';
+            let score = minimax(currBoard, depth + 1, false);
+            currBoard[i] = '';
+            bestScore = Math.max(score, bestScore);
+          }
+        }
+        return bestScore;
+      } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (currBoard[i] === '') {
+            currBoard[i] = 'X';
+            let score = minimax(currBoard, depth + 1, true);
+            currBoard[i] = '';
+            bestScore = Math.min(score, bestScore);
+          }
+        }
+        return bestScore;
+      }
+    }
+
+    function checkWinnerForMinimax() {
+      for (let condition of winningConditions) {
+        const [a, b, c] = condition;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return board[a];
+        }
+      }
+      if (!board.includes('')) return 'tie';
+      return null;
+    }
+
+    function resetGame() {
+      board = ['', '', '', '', '', '', '', '', ''];
+      currentPlayer = 'X';
+      isGameActive = true;
+      statusText.textContent = `Player X's Turn`;
+
+      cells.forEach(cell => {
+        cell.textContent = '';
+        cell.className = 'cell';
+      });
+    }
+  </script>
+</body>
+</html>
